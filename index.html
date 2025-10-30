@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>有限寿命 DCF → 隐含 PE 交互计算器</title>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    :root{
+      --bg:#0b1020; --card:#151a2c; --ink:#e8ecff; --muted:#9aa3c7; --accent:#7aa2ff; --bad:#ff6b6b; --good:#50fa7b;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); color:var(--ink);}
+    .wrap{max-width:1000px; margin:24px auto; padding:16px}
+    h1{font-weight:800; letter-spacing:.3px; margin:0 0 8px}
+    p.lead{color:var(--muted); margin-top:0}
+    .grid{display:grid; grid-template-columns:repeat(12,1fr); gap:12px}
+    .card{background:var(--card); border:1px solid #232a43; border-radius:16px; padding:16px}
+    .box{grid-column:span 12}
+    @media(min-width:880px){ .box{grid-column:span 6} }
+    label{display:flex; align-items:center; justify-content:space-between; font-size:13px; color:var(--muted); margin:.25rem 0}
+    input[type="number"], select{width:100%; padding:10px 12px; border-radius:12px; border:1px solid #2a3254; background:#0f1530; color:var(--ink); outline:none}
+    input[type="range"]{width:100%}
+    .row{display:grid; grid-template-columns:1fr 120px; gap:8px; align-items:center}
+    .hint{font-size:12px; color:var(--muted)}
+    .pill{display:inline-block; padding:.25rem .6rem; border-radius:999px; background:#0f1530; border:1px solid #283257; color:var(--muted); font-size:12px}
+    .out{font-variant-numeric:tabular-nums; font-size:28px; font-weight:800}
+    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+    .grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
+    .kpi{background:#0f1530; border:1px solid #283257; border-radius:14px; padding:12px}
+    .kpi h3{margin:0; font-size:13px; color:var(--muted)}
+    .kpi .v{margin-top:6px; font-size:22px; font-weight:800}
+    .warn{color:var(--bad)}
+    .good{color:var(--good)}
+    .footer{color:#8892b0; font-size:12px; margin-top:10px}
+    details{margin-top:8px}
+    code{background:#0f1530; padding:2px 6px; border-radius:8px; border:1px solid #283257}
+    .sep{height:1px; background:#243055; margin:10px 0}
+    .btn{cursor:pointer; border:none; padding:10px 14px; border-radius:12px; background:linear-gradient(180deg,#6e8cff,#4a6fff); color:white; font-weight:700}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>有限寿命 DCF → 隐含 PE 交互计算器</h1>
+    <p class="lead">用于两阶段增长 + 有限寿命（终止年）场景。PE = 企业价值 ÷ 当前自由现金流（或利润）。</p>
+
+    <div class="grid">
+      <div class="card box">
+        <h2 style="margin-top:0">参数</h2>
+        <div class="grid">
+          <div class="box">
+            <span class="pill">现金流基准</span>
+            <div class="row">
+              <label>当前自由现金流 / 利润 (FCF₀, 同口径)
+                <span class="hint mono" id="fcf0Hint"></span>
+              </label>
+              <input id="fcf0" type="number" step="any" value="100" />
+            </div>
+          </div>
+          <div class="box">
+            <span class="pill">折现与寿命</span>
+            <div class="row">
+              <label>折现率 r (%)</label>
+              <input id="r" type="number" step="0.1" value="10" />
+            </div>
+            <div class="row">
+              <label>总寿命 N（年）</label>
+              <input id="N" type="number" step="1" value="20" />
+            </div>
+          </div>
+          <div class="box">
+            <span class="pill">阶段一（高增）</span>
+            <div class="row">
+              <label>增长率 g₁ (%)</label>
+              <input id="g1" type="number" step="0.1" value="30" />
+            </div>
+            <div class="row">
+              <label>持续年数 n₁</label>
+              <input id="n1" type="number" step="1" value="5" />
+            </div>
+          </div>
+          <div class="box">
+            <span class="pill">阶段二（稳定期）</span>
+            <div class="row">
+              <label>增长率 g₂ / 终端增长率 (%)</label>
+              <input id="g2" type="number" step="0.1" value="3" />
+            </div>
+            <div class="row">
+              <label>是否使用“单阶段”常数增长（忽略上面的 n₁ / g₂）</label>
+              <select id="mode">
+                <option value="two">两阶段（g₁→g₂）直到 N 年终止</option>
+                <option value="one">单阶段（g 常数）直到 N 年终止</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="sep"></div>
+        <button class="btn" id="calc">计算</button>
+        <span id="msg" class="hint" style="margin-left:12px"></span>
+      </div>
+
+      <div class="card box">
+        <h2 style="margin-top:0">结果</h2>
+        <div class="grid-3">
+          <div class="kpi"><h3>隐含 PE</h3><div class="v" id="pe">—</div></div>
+          <div class="kpi"><h3>企业价值 V</h3><div class="v" id="v">—</div></div>
+          <div class="kpi"><h3>阶段一现值</h3><div class="v" id="pv1">—</div></div>
+        </div>
+        <div class="grid-3" style="margin-top:12px">
+          <div class="kpi"><h3>阶段二现值（折现回t=0）</h3><div class="v" id="pv2">—</div></div>
+          <div class="kpi"><h3>FCF₅ / 过渡点现金流</h3><div class="v" id="cfk">—</div></div>
+          <div class="kpi"><h3>有效期</h3><div class="v" id="horizon">—</div></div>
+        </div>
+        <details>
+          <summary>公式与说明</summary>
+          <p class="hint"><strong>单阶段（常数 g，经营 N 年终止）现值：</strong><br>
+            $$V = FCF_0 \times \frac{1+g}{r-g} \times \left[1 - \left(\frac{1+g}{1+r}\right)^N\right]$$</p>
+          <p class="hint"><strong>两阶段：先按 g₁ 增长 n₁ 年，其后按 g₂ 增长至第 N 年终止：</strong><br>
+            $$PV_1 = \sum_{t=1}^{n_1} \frac{FCF_0 \cdot (1+g_1)^t}{(1+r)^t}$$
+            $$CF_k = FCF_0 \cdot (1+g_1)^{n_1}$$
+            $$V_{2@k} = CF_k \times \frac{1+g_2}{r-g_2} \times \left[1 - \left(\frac{1+g_2}{1+r}\right)^{N-n_1}\right]$$
+            $$PV_2 = \frac{V_{2@k}}{(1+r)^{n_1}}$$
+            $$V = PV_1 + PV_2, \quad PE = \frac{V}{FCF_0}$$
+          </p>
+        </details>
+        <div class="footer">数值仅为模型计算结果，不构成投资建议。若 r ≤ g（对应阶段），模型会给出警示。</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id)=>document.getElementById(id);
+    const fmt = (x, digits=2)=> isFinite(x)? new Intl.NumberFormat('zh-CN',{maximumFractionDigits:digits}).format(x) : '—';
+
+    function calcSingle(FCF0, r, g, N){
+      // V = FCF0 * ((1+g)/(r-g)) * [1 - ((1+g)/(1+r))^N]
+      const rr = r, gg = g;
+      if (rr <= gg) return {V: NaN, PV1: NaN, PV2: NaN, CFk: NaN, warn:'单阶段：r ≤ g，现值发散，需降低 g 或提高 r'};
+      const ratio = (1+gg)/(1+rr);
+      const bracket = 1 - Math.pow(ratio, N);
+      const V = FCF0 * ((1+gg)/(rr-gg)) * bracket;
+      return {V, PV1: V, PV2: 0, CFk: FCF0, warn:''};
+    }
+
+    function calcTwoStage(FCF0, r, g1, n1, g2, N){
+      const rr = r, g_1=g1, g_2=g2;
+      if (n1<0 || N<=0 || n1>N) return {V:NaN, PV1:NaN, PV2:NaN, CFk:NaN, warn:'请确保 0 ≤ n₁ ≤ N 且 N>0'};
+      let PV1=0;
+      for(let t=1;t<=n1;t++){
+        PV1 += FCF0 * Math.pow(1+g_1,t) / Math.pow(1+rr,t);
+      }
+      const CFk = FCF0 * Math.pow(1+g_1, n1); // 过渡点现金流（第 n1 年末）
+      if (rr <= g_2) return {V:NaN, PV1, PV2:NaN, CFk, warn:'稳定期：r ≤ g₂，现值发散，请提高 r 或降低 g₂'};
+      const ratio = (1+g_2)/(1+rr);
+      const years2 = Math.max(0, N - n1);
+      const bracket = 1 - Math.pow(ratio, years2);
+      const V2_at_k = CFk * ((1+g_2)/(rr - g_2)) * bracket; // 过渡点时的价值
+      const PV2 = V2_at_k / Math.pow(1+rr, n1);
+      const V = PV1 + PV2;
+      return {V, PV1, PV2, CFk, warn:''};
+    }
+
+    function run(){
+      const FCF0 = parseFloat($("fcf0").value||'0');
+      const r = parseFloat($("r").value||'0')/100;
+      const N = parseInt($("N").value||'0',10);
+      const g1 = parseFloat($("g1").value||'0')/100;
+      const n1 = parseInt($("n1").value||'0',10);
+      const g2 = parseFloat($("g2").value||'0')/100;
+      const mode = $("mode").value;
+
+      let res;
+      if(mode==='one'){
+        res = calcSingle(FCF0, r, g1, N);
+      }else{
+        res = calcTwoStage(FCF0, r, g1, n1, g2, N);
+      }
+
+      $("pe").textContent = isFinite(res.V)? fmt(res.V/FCF0,2) : '—';
+      $("v").textContent  = isFinite(res.V)? fmt(res.V,2) : '—';
+      $("pv1").textContent= isFinite(res.PV1)? fmt(res.PV1,2) : '—';
+      $("pv2").textContent= isFinite(res.PV2)? fmt(res.PV2,2) : '—';
+      $("cfk").textContent= isFinite(res.CFk)? fmt(res.CFk,2) : '—';
+      $("horizon").textContent = N + ' 年';
+      $("msg").textContent = res.warn || '';
+      $("msg").className = res.warn? 'hint warn' : 'hint';
+    }
+
+    $("calc").addEventListener('click', run);
+    run();
+  </script>
+</body>
+</html>
