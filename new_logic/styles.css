@@ -1,0 +1,251 @@
+/* Base Colors & Resets */
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1e1e1e;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #424242;
+    border: 2px solid #1e1e1e;
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #4f4f4f;
+}
+
+/* Split Pane Resizer */
+.resizer {
+    width: 12px;
+    background: #21252b;
+    cursor: col-resize;
+    transition: background 0.2s;
+    position: relative;
+    z-index: 50;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-left: 1px solid #181a1f;
+    border-right: 1px solid #181a1f;
+}
+
+.resizer:hover,
+.resizer.resizing {
+    background: #3b82f6;
+    border-color: #2563eb;
+}
+
+.resizer::after {
+    content: "";
+    height: 24px;
+    width: 4px;
+    background: #4b5563;
+    border-radius: 2px;
+    display: block;
+}
+
+.resizer:hover::after,
+.resizer.resizing::after {
+    background: white;
+}
+
+body.resizing {
+    cursor: col-resize;
+    user-select: none;
+}
+
+/* Internal Sidebar Transition */
+#vscode-sidebar {
+    transition: width 0.3s ease;
+    width: 16rem;
+    /* w-64 equivalent */
+    overflow: hidden;
+    /* Ensure content hides */
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Ensure children maintain full width to prevent squashing during hide/show */
+#vscode-sidebar>* {
+    min-width: 16rem;
+}
+
+/* Sidebar Collapsed State */
+#vscode-sidebar.sidebar-collapsed {
+    width: 36px !important;
+}
+
+/* Header Text handling */
+#explorer-header .header-text {
+    transition: opacity 0.2s;
+    opacity: 1;
+    white-space: nowrap;
+}
+
+#vscode-sidebar.sidebar-collapsed .header-text {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* File Tree handling */
+#file-tree {
+    transition: opacity 0.2s;
+    opacity: 1;
+}
+
+#vscode-sidebar.sidebar-collapsed #file-tree {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    /* Use visibility to hide from screen readers/clicks but keep layout if needed, though opacity handles visual */
+    transition-delay: 0s;
+    /* Hide immediately on collapse start? Or fade out? */
+}
+
+/* Sidebar Toggle Button */
+#sidebar-toggle {
+    outline: none;
+    cursor: pointer;
+    flex-shrink: 0;
+    /* Never shrink the button */
+    width: 36px;
+    /* Explicit width matching collapsed sidebar */
+    display: flex;
+    justify-content: center;
+}
+
+/* File Tree Item Styling */
+.file-item {
+    cursor: pointer;
+    user-select: none;
+    padding: 2px 16px;
+    display: flex;
+    align-items: center;
+    color: #cccccc;
+    font-size: 13px;
+    border-left: 2px solid transparent;
+}
+
+.file-item:hover {
+    background-color: #2a2d2e;
+}
+
+.file-item.active {
+    background-color: #37373d;
+    color: #ffffff;
+    border-left-color: #0e639c;
+}
+
+.file-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    display: inline-block;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    flex-shrink: 0;
+}
+
+/* Tree Arrow */
+.tree-arrow {
+    width: 16px;
+    height: 16px;
+    margin-right: 0px;
+    display: inline-block;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="%23cccccc"><path d="M6 4l4 4-4 4z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: center;
+    transition: transform 0.1s ease;
+    opacity: 0.7;
+}
+
+.tree-arrow.expanded {
+    transform: rotate(90deg);
+}
+
+.folder-children.collapsed {
+    display: none;
+}
+
+/* Icons (Simplistic placeholder approach) */
+.icon-folder {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="%23dcb67a"><path d="M14.5 3H7.71l-.85-.85L6 1.3 5.15 1.3 1.5 1.3A1.5 1.5 0 0 0 0 2.8v10.4A1.5 1.5 0 0 0 1.5 14.7h13a1.5 1.5 0 0 0 1.5-1.5V4.5A1.5 1.5 0 0 0 14.5 3z"/></svg>');
+}
+
+.icon-file {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="%23cccccc"><path d="M13.71 4.29l-3-3L10 1H3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V5l-.29-.71zM10 5V2.41L12.59 5H10z"/></svg>');
+}
+
+.icon-py {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="%233572A5"><path d="M14 8c0-3.31-2.69-6-6-6S2 4.69 2 8s2.69 6 6 6 6-2.69 6-6zM5 8c0-1.66 1.34-3 3-3s3 1.34 3 3-1.34 3-3 3-3-1.34-3-3z"/></svg>');
+}
+
+.icon-sql {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="%23e38c00"><path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM2.5 8a5.5 5.5 0 1111 0 5.5 5.5 0 01-11 0z"/></svg>');
+}
+
+.icon-html {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="%23e34c26"><path d="M1 1h14v14H1z"/></svg>');
+}
+
+/* Tabs */
+.tab-item {
+    background-color: #2d2d2d;
+    color: #969696;
+    padding: 0 10px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    border-right: 1px solid #1e1e1e;
+    cursor: pointer;
+    min-width: fit-content;
+}
+
+.tab-item.active {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    border-top: 1px solid #007acc;
+}
+
+.tab-item:hover {
+    background-color: #1e1e1e;
+}
+
+.tab-close {
+    margin-left: 8px;
+    border-radius: 5px;
+    padding: 2px;
+}
+
+.tab-close:hover {
+    background-color: #4b4b4b;
+    color: white;
+}
+
+/* Highlighting Animation */
+@keyframes highlight-flash {
+    0% {
+        background-color: rgba(59, 130, 246, 0.5);
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+.myLineDecoration {
+    animation: highlight-flash 2s ease-out;
+}

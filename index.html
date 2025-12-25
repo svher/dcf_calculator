@@ -1,193 +1,1038 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>有限寿命 DCF → 隐含 PE 交互计算器</title>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-  <style>
-    :root{
-      --bg:#0b1020; --card:#151a2c; --ink:#e8ecff; --muted:#9aa3c7; --accent:#7aa2ff; --bad:#ff6b6b; --good:#50fa7b;
-    }
-    *{box-sizing:border-box}
-    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); color:var(--ink);}
-    .wrap{max-width:1000px; margin:24px auto; padding:16px}
-    h1{font-weight:800; letter-spacing:.3px; margin:0 0 8px}
-    p.lead{color:var(--muted); margin-top:0}
-    .grid{display:grid; grid-template-columns:repeat(12,1fr); gap:12px}
-    .card{background:var(--card); border:1px solid #232a43; border-radius:16px; padding:16px}
-    .box{grid-column:span 12}
-    @media(min-width:880px){ .box{grid-column:span 6} }
-    label{display:flex; align-items:center; justify-content:space-between; font-size:13px; color:var(--muted); margin:.25rem 0}
-    input[type="number"], select{width:100%; padding:10px 12px; border-radius:12px; border:1px solid #2a3254; background:#0f1530; color:var(--ink); outline:none}
-    input[type="range"]{width:100%}
-    .row{display:grid; grid-template-columns:1fr 120px; gap:8px; align-items:center}
-    .hint{font-size:12px; color:var(--muted)}
-    .pill{display:inline-block; padding:.25rem .6rem; border-radius:999px; background:#0f1530; border:1px solid #283257; color:var(--muted); font-size:12px}
-    .out{font-variant-numeric:tabular-nums; font-size:28px; font-weight:800}
-    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
-    .grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
-    .kpi{background:#0f1530; border:1px solid #283257; border-radius:14px; padding:12px}
-    .kpi h3{margin:0; font-size:13px; color:var(--muted)}
-    .kpi .v{margin-top:6px; font-size:22px; font-weight:800}
-    .warn{color:var(--bad)}
-    .good{color:var(--good)}
-    .footer{color:#8892b0; font-size:12px; margin-top:10px}
-    details{margin-top:8px}
-    code{background:#0f1530; padding:2px 6px; border-radius:8px; border:1px solid #283257}
-    .sep{height:1px; background:#243055; margin:10px 0}
-    .btn{cursor:pointer; border:none; padding:10px 14px; border-radius:12px; background:linear-gradient(180deg,#6e8cff,#4a6fff); color:white; font-weight:700}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全域风险团伙审核 - 实时化方案设计</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/sql.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #21252b;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 5px;
+            border: 2px solid #21252b;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+
+        pre {
+            margin: 0;
+            height: 100%;
+            width: 100%;
+            overflow: auto;
+        }
+
+        code.hljs {
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            min-height: 100%;
+            /* Remove left padding so sticky line numbers touch the edge */
+            padding: 0.5rem 1rem 2rem 0 !important;
+            white-space: pre;
+            display: block;
+            background-color: #282c34;
+            color: #abb2bf;
+        }
+
+        .code-placeholder {
+            color: #5c6370;
+            font-style: italic;
+        }
+
+        .resizer {
+            width: 12px;
+            background: #21252b;
+            cursor: col-resize;
+            transition: background 0.2s;
+            position: relative;
+            z-index: 50;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-left: 1px solid #181a1f;
+            border-right: 1px solid #181a1f;
+        }
+
+        .resizer:hover,
+        .resizer.resizing {
+            background: #3b82f6;
+            border-color: #2563eb;
+        }
+
+        .resizer::after {
+            content: "";
+            height: 24px;
+            width: 4px;
+            background: #4b5563;
+            border-radius: 2px;
+            display: block;
+        }
+
+        .resizer:hover::after,
+        .resizer.resizing::after {
+            background: white;
+        }
+
+        body.resizing {
+            cursor: col-resize;
+            user-select: none;
+        }
+
+        /* Ensure table doesn't have gaps where text can show through */
+        .hljs-ln {
+            border-collapse: collapse;
+        }
+
+        .hljs-ln-numbers {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+            text-align: right;
+            color: #495162;
+            border-right: 1px solid #495162;
+            vertical-align: top;
+            padding-right: 10px !important;
+            padding-left: 10px !important;
+            /* Add left padding for breathing room */
+            min-width: 50px;
+            /* Slightly wider */
+
+            /* Sticky Line Numbers */
+            position: sticky;
+            left: 0;
+            z-index: 10;
+            background-color: #282c34;
+        }
+
+        /* Ensure code cells position static so they slide under sticky */
+        .hljs-ln-code {
+            padding-left: 15px !important;
+            position: static;
+        }
+
+        @keyframes highlight-flash {
+            0% {
+                background-color: #3b82f6;
+            }
+
+            100% {
+                background-color: transparent;
+            }
+        }
+
+        .highlight-line {
+            animation: highlight-flash 2s ease-out;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#f0f9ff', 100: '#e0f2fe', 500: '#0ea5e9', 600: '#0284c7', 900: '#0c4a6e' }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body>
-  <div class="wrap">
-    <h1>有限寿命 DCF → 隐含 PE 交互计算器</h1>
-    <p class="lead">用于两阶段增长 + 有限寿命（终止年）场景。PE = 企业价值 ÷ 当前自由现金流（或利润）。</p>
 
-    <div class="grid">
-      <div class="card box">
-        <h2 style="margin-top:0">参数</h2>
-        <div class="grid">
-          <div class="box">
-            <span class="pill">现金流基准</span>
-            <div class="row">
-              <label>当前自由现金流 / 利润 (FCF₀, 同口径)
-                <span class="hint mono" id="fcf0Hint"></span>
-              </label>
-              <input id="fcf0" type="number" step="any" value="100" />
-            </div>
-          </div>
-          <div class="box">
-            <span class="pill">折现与寿命</span>
-            <div class="row">
-              <label>折现率 r (%)</label>
-              <input id="r" type="number" step="0.1" value="10" />
-            </div>
-            <div class="row">
-              <label>总寿命 N（年）</label>
-              <input id="N" type="number" step="1" value="20" />
-            </div>
-          </div>
-          <div class="box">
-            <span class="pill">阶段一（高增）</span>
-            <div class="row">
-              <label>增长率 g₁ (%)</label>
-              <input id="g1" type="number" step="0.1" value="30" />
-            </div>
-            <div class="row">
-              <label>持续年数 n₁</label>
-              <input id="n1" type="number" step="1" value="5" />
-            </div>
-          </div>
-          <div class="box">
-            <span class="pill">阶段二（稳定期）</span>
-            <div class="row">
-              <label>增长率 g₂ / 终端增长率 (%)</label>
-              <input id="g2" type="number" step="0.1" value="3" />
-            </div>
-            <div class="row">
-              <label>是否使用“单阶段”常数增长（忽略上面的 n₁ / g₂）</label>
-              <select id="mode">
-                <option value="two">两阶段（g₁→g₂）直到 N 年终止</option>
-                <option value="one">单阶段（g 常数）直到 N 年终止</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        <div class="sep"></div>
-        <button class="btn" id="calc">计算</button>
-        <span id="msg" class="hint" style="margin-left:12px"></span>
-      </div>
+<body class="bg-slate-50 text-slate-900 overflow-hidden h-screen flex flex-col">
 
-      <div class="card box">
-        <h2 style="margin-top:0">结果</h2>
-        <div class="grid-3">
-          <div class="kpi"><h3>隐含 PE</h3><div class="v" id="pe">—</div></div>
-          <div class="kpi"><h3>企业价值 V</h3><div class="v" id="v">—</div></div>
-          <div class="kpi"><h3>阶段一现值</h3><div class="v" id="pv1">—</div></div>
+    <header
+        class="bg-white border-b border-slate-200 shadow-sm z-10 px-6 py-4 flex justify-between items-center h-16 shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="h-8 w-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">G
+            </div>
+            <div>
+                <h1 class="text-base font-bold text-slate-800">全域风险团伙审核实时化</h1>
+                <p class="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Real-time Architecture
+                    Visualization</p>
+            </div>
         </div>
-        <div class="grid-3" style="margin-top:12px">
-          <div class="kpi"><h3>阶段二现值（折现回t=0）</h3><div class="v" id="pv2">—</div></div>
-          <div class="kpi"><h3>FCF₅ / 过渡点现金流</h3><div class="v" id="cfk">—</div></div>
-          <div class="kpi"><h3>有效期</h3><div class="v" id="horizon">—</div></div>
+        <div class="flex items-center gap-2 text-sm text-slate-500">
+            <span id="status-indicator"
+                class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-50 text-green-700 text-xs font-medium border border-green-100">
+                <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Ready
+            </span>
         </div>
-        <details>
-          <summary>公式与说明</summary>
-          <p class="hint"><strong>单阶段（常数 g，经营 N 年终止）现值：</strong><br>
-            $$V = FCF_0 \times \frac{1+g}{r-g} \times \left[1 - \left(\frac{1+g}{1+r}\right)^N\right]$$</p>
-          <p class="hint"><strong>两阶段：先按 g₁ 增长 n₁ 年，其后按 g₂ 增长至第 N 年终止：</strong><br>
-            $$PV_1 = \sum_{t=1}^{n_1} \frac{FCF_0 \cdot (1+g_1)^t}{(1+r)^t}$$
-            $$CF_k = FCF_0 \cdot (1+g_1)^{n_1}$$
-            $$V_{2@k} = CF_k \times \frac{1+g_2}{r-g_2} \times \left[1 - \left(\frac{1+g_2}{1+r}\right)^{N-n_1}\right]$$
-            $$PV_2 = \frac{V_{2@k}}{(1+r)^{n_1}}$$
-            $$V = PV_1 + PV_2, \quad PE = \frac{V}{FCF_0}$$
-          </p>
-        </details>
-        <div class="footer">数值仅为模型计算结果，不构成投资建议。若 r ≤ g（对应阶段），模型会给出警示。</div>
-      </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden" id="main-split-view">
+
+        <main class="flex-1 relative bg-slate-50 flex flex-col min-w-[300px]" id="left-pane" style="width: 50%;">
+            <div id="graph-header-container"
+                class="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-semibold text-brand-600 shadow-sm border border-brand-100 flex items-center gap-2 transition-colors duration-200">
+                <button id="back-btn" class="hidden p-1 -ml-1 rounded-full transition" title="返回">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                </button>
+                <span id="graph-title">Dependency Graph</span>
+            </div>
+
+            <div id="graph-container" class="flex-1 w-full h-full p-4 overflow-auto"></div>
+        </main>
+
+        <div class="resizer" id="drag-handle"></div>
+
+        <aside class="relative bg-[#282c34] shadow-xl z-20 flex flex-col min-w-[300px]" id="right-pane"
+            style="width: 50%;">
+            <div class="h-12 border-b border-black/20 flex items-center justify-between px-4 bg-[#21252b] shrink-0">
+                <div class="flex items-center gap-4 overflow-hidden flex-1">
+                    <div class="flex items-center gap-2 overflow-hidden max-w-[50%]">
+                        <svg class="w-4 h-4 text-brand-400 shrink-0" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                            </path>
+                        </svg>
+                        <span id="current-filename" class="text-xs font-mono font-medium text-slate-300 truncate">Select
+                            a file</span>
+                    </div>
+
+                    <div class="flex bg-slate-800 p-0.5 rounded-lg border border-slate-700">
+                        <button onclick="switchMode('simplified')" id="tab-simplified"
+                            class="px-3 py-1 text-[10px] font-medium rounded-md text-white bg-brand-600 transition-all">Simplified</button>
+                        <button onclick="switchMode('original')" id="tab-original"
+                            class="px-3 py-1 text-[10px] font-medium rounded-md text-slate-400 hover:text-slate-200 transition-all">Original</button>
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="copyCode()"
+                        class="text-[10px] bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-slate-300 border border-slate-600 transition">COPY</button>
+                    <span
+                        class="text-[10px] bg-brand-900/50 px-2 py-0.5 rounded text-brand-200 font-medium border border-brand-800"
+                        id="lang-tag">TEXT</span>
+                </div>
+            </div>
+
+            <div class="flex-1 bg-[#282c34] relative h-full w-full overflow-hidden">
+                <pre class="h-full w-full m-0"><code id="code-content" class="hljs language-plaintext code-placeholder">// Select a node on the left to view code.
+//Toggle between 'Simplified' and 'Original' tabs above.</code></pre>
+            </div>
+        </aside>
     </div>
-  </div>
 
-  <script>
-    const $ = (id)=>document.getElementById(id);
-    const fmt = (x, digits=2)=> isFinite(x)? new Intl.NumberFormat('zh-CN',{maximumFractionDigits:digits}).format(x) : '—';
+    <!-- Immediate Layout Restoration to prevent FOUC (Flash of Unstyled Content) -->
+    <script>
+            (function () {
+                try {
+                    const savedRatio = localStorage.getItem('splitPaneRatio');
+                    if (savedRatio) {
+                        const ratio = parseFloat(savedRatio);
+                        if (!isNaN(ratio) && ratio > 20 && ratio < 80) {
+                            const leftPane = document.getElementById('left-pane');
+                            const rightPane = document.getElementById('right-pane');
+                            if (leftPane && rightPane) {
+                                leftPane.style.width = ratio + '%';
+                                rightPane.style.width = (100 - ratio) + '%';
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Failed to restore split layout:', e);
+                }
+            })();
+    </script>
 
-    function calcSingle(FCF0, r, g, N){
-      // V = FCF0 * ((1+g)/(r-g)) * [1 - ((1+g)/(1+r))^N]
-      const rr = r, gg = g;
-      if (rr <= gg) return {V: NaN, PV1: NaN, PV2: NaN, CFk: NaN, warn:'单阶段：r ≤ g，现值发散，需降低 g 或提高 r'};
-      const ratio = (1+gg)/(1+rr);
-      const bracket = 1 - Math.pow(ratio, N);
-      const V = FCF0 * ((1+gg)/(rr-gg)) * bracket;
-      return {V, PV1: V, PV2: 0, CFk: FCF0, warn:''};
-    }
+    <!-- Mermaid Graph Definitions -->
+    <script type="text/template" id="graph-main">
+graph TD
+    classDef default fill:#fff,stroke:#cbd5e1,stroke-width:1px,rx:6,ry:6,color:#334155;
+    classDef origin fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#1e40af;
+    classDef process fill:#faf5ff,stroke:#a855f7,stroke-width:2px,color:#6b21a8;
+    classDef final fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,color:#166534;
+    
+    subgraph Level0 ["Level 0: Raw Data"]
+        GroupLink["shop_fusion_link_group_v1"]:::origin
+        ShopAttr["dim_slr_shop_ext_df"]:::origin
+        PenaltyTicket["dwd_gvn_penalty_ticket_info_df"]:::origin
+        JudgeRecord["dwd_gvn_penalty_judge_record_df"]:::origin
+        OrderData["dm_aftersale_order_status_df"]:::origin
+    end
 
-    function calcTwoStage(FCF0, r, g1, n1, g2, N){
-      const rr = r, g_1=g1, g_2=g2;
-      if (n1<0 || N<=0 || n1>N) return {V:NaN, PV1:NaN, PV2:NaN, CFk:NaN, warn:'请确保 0 ≤ n₁ ≤ N 且 N>0'};
-      let PV1=0;
-      for(let t=1;t<=n1;t++){
-        PV1 += FCF0 * Math.pow(1+g_1,t) / Math.pow(1+rr,t);
-      }
-      const CFk = FCF0 * Math.pow(1+g_1, n1); // 过渡点现金流（第 n1 年末）
-      if (rr <= g_2) return {V:NaN, PV1, PV2:NaN, CFk, warn:'稳定期：r ≤ g₂，现值发散，请提高 r 或降低 g₂'};
-      const ratio = (1+g_2)/(1+rr);
-      const years2 = Math.max(0, N - n1);
-      const bracket = 1 - Math.pow(ratio, years2);
-      const V2_at_k = CFk * ((1+g_2)/(rr - g_2)) * bracket; // 过渡点时的价值
-      const PV2 = V2_at_k / Math.pow(1+rr, n1);
-      const V = PV1 + PV2;
-      return {V, PV1, PV2, CFk, warn:''};
-    }
+    subgraph Level1 ["Level 1: Parsing"]
+        ParseScript["底线违规商品映射解析_*.py"]:::process
+        ParsedSeed["parsed_product_info"]
+    end
 
-    function run(){
-      const FCF0 = parseFloat($("fcf0").value||'0');
-      const r = parseFloat($("r").value||'0')/100;
-      const N = parseInt($("N").value||'0',10);
-      const g1 = parseFloat($("g1").value||'0')/100;
-      const n1 = parseInt($("n1").value||'0',10);
-      const g2 = parseFloat($("g2").value||'0')/100;
-      const mode = $("mode").value;
+    subgraph Level2 ["Level 2: Assembly"]
+        BaseDataSQL["全域风险团伙审核_召回_团伙基础数据.sql"]:::process
+        OriginGroup["origin_groupshopinfo"]
+    end
 
-      let res;
-      if(mode==='one'){
-        res = calcSingle(FCF0, r, g1, N);
-      }else{
-        res = calcTwoStage(FCF0, r, g1, n1, g2, N);
-      }
+    subgraph Level3 ["Level 3: Pre-Filtering"]
+        FilterSQL["全域风险团伙审核_召回_团伙种子过滤_*.sql"]:::process
+        FilterGroup["filter_groupshopinfo"]
+    end
 
-      $("pe").textContent = isFinite(res.V)? fmt(res.V/FCF0,2) : '—';
-      $("v").textContent  = isFinite(res.V)? fmt(res.V,2) : '—';
-      $("pv1").textContent= isFinite(res.PV1)? fmt(res.PV1,2) : '—';
-      $("pv2").textContent= isFinite(res.PV2)? fmt(res.PV2,2) : '—';
-      $("cfk").textContent= isFinite(res.CFk)? fmt(res.CFk,2) : '—';
-      $("horizon").textContent = N + ' 年';
-      $("msg").textContent = res.warn || '';
-      $("msg").className = res.warn? 'hint warn' : 'hint';
-    }
+    subgraph Level4 ["Level 4: Python Rules"]
+        RuleScript["全域风险团伙审核_召回_团伙规则过滤_*.py"]:::process
+        ResultGroup["result_groupshopinfo"]
+    end
 
-    $("calc").addEventListener('click', run);
-    run();
-  </script>
+    subgraph Level5 ["Level 5: Aggregation"]
+        SummaryScript["全域风险团伙审核_召回_汇总.py"]:::final
+        FinalTable["groupshopinfo"]:::final
+        HistoryData[("History 7d")]
+    end
+
+    PenaltyTicket --> ParseScript
+    JudgeRecord --> ParseScript
+    ParseScript --> ParsedSeed
+    GroupLink --> BaseDataSQL
+    ShopAttr --> BaseDataSQL
+    OrderData --> BaseDataSQL
+    ParsedSeed --> BaseDataSQL
+    BaseDataSQL --> OriginGroup
+    OriginGroup --> FilterSQL
+    PenaltyTicket --> FilterSQL
+    FilterSQL --> FilterGroup
+    FilterGroup --> RuleScript
+    RuleScript --> ResultGroup
+    ResultGroup --> SummaryScript
+    HistoryData --> SummaryScript
+    SummaryScript --> FinalTable
+</script>
+
+    <script type="text/template" id="graph-SummaryScript">
+graph TD
+    classDef data fill:#e0f2fe,stroke:#0284c7,stroke-width:2px;
+    classDef logic fill:#fae8ff,stroke:#a855f7,stroke-width:2px;
+    classDef output fill:#dcfce7,stroke:#16a34a,stroke-width:2px;
+    
+    Start(("开始")):::logic
+    LoadToday["读取今日数据<br/>today_data_sql"]:::data
+    LoadHistory["读取历史数据<br/>history_data_sql"]:::data
+    BuildDict["构建历史字典<br/>history_shop_link_seed_dict"]:::logic
+    FilterLoop["遍历今日数据"]:::logic
+    SubsetCheck{"子集检查<br/>current ⊆ history?"}:::logic
+    Filter["过滤"]:::logic
+    Keep["保留"]:::logic
+    Collect["收集有效数据"]:::logic
+    SaveHive["保存到 Hive"]:::output
+    
+    Start --> LoadToday & LoadHistory
+    LoadToday & LoadHistory --> BuildDict
+    BuildDict --> FilterLoop
+    FilterLoop --> SubsetCheck
+    SubsetCheck -->|Yes| Filter
+    SubsetCheck -->|No| Keep
+    Filter & Keep --> Collect
+    Collect --> SaveHive
+</script>
+
+    <script type="text/template" id="graph-RuleScript">
+graph TD
+    classDef data fill:#e0f2fe,stroke:#0284c7,stroke-width:2px;
+    classDef logic fill:#fae8ff,stroke:#a855f7,stroke-width:2px;
+    classDef output fill:#dcfce7,stroke:#16a34a,stroke-width:2px;
+    
+    Start(("开始")):::logic
+    Load["读取筛选后数据"]:::data
+    Group["按 group_id 分组"]:::logic
+    Sort["排序商家<br/>(seed, new_product, random)"]:::logic
+    CheckSize{"size > 10?"}:::logic
+    Split["切分子群组"]:::logic
+    Keep["保持原样"]:::logic
+    BuildJSON["构建 JSON"]:::logic
+    SaveHive["保存到 Hive"]:::output
+    
+    Start --> Load
+    Load --> Group
+    Group --> Sort
+    Sort --> CheckSize
+    CheckSize -->|Yes| Split
+    CheckSize -->|No| Keep
+    Split & Keep --> BuildJSON
+    BuildJSON --> SaveHive
+</script>
+
+    <script type="text/template" id="graph-FilterSQL">
+graph TD
+    classDef data fill:#e0f2fe,stroke:#0284c7,stroke-width:2px;
+    classDef logic fill:#fae8ff,stroke:#a855f7,stroke-width:2px;
+    classDef output fill:#dcfce7,stroke:#16a34a,stroke-width:2px;
+    
+    Start(("开始")):::logic
+    Origin["origin_groupshopinfo"]:::data
+    Penalty["JOIN penalty_tickets"]:::data
+    Window1["计算 group_jh_seed_cnt"]:::logic
+    Window2["计算 group_has_auditproduct_shop_cnt"]:::logic
+    Window3["计算 group_worth_xxx_cnt"]:::logic
+    Filter["WHERE 条件过滤"]:::logic
+    Insert["INSERT filter_groupshopinfo"]:::output
+    
+    Start --> Origin
+    Origin --> Penalty
+    Penalty --> Window1
+    Window1 --> Window2
+    Window2 --> Window3
+    Window3 --> Filter
+    Filter --> Insert
+</script>
+
+    <script type="text/template" id="graph-BaseDataSQL">
+graph TD
+    classDef data fill:#e0f2fe,stroke:#0284c7,stroke-width:2px;
+    classDef logic fill:#fae8ff,stroke:#a855f7,stroke-width:2px;
+    classDef output fill:#dcfce7,stroke:#16a34a,stroke-width:2px;
+    
+    Start(("开始")):::logic
+    CTE1["CTE: group_base_data<br/><i>(FROM shop_fusion_link_group_v1)</i>"]:::data
+    CTE2["CTE: shop_main_cate<br/><i>(主营类目)</i>"]:::data
+    CTE3["CTE: seed_penalize_data<br/><i>(罚单+商品解析)</i>"]:::data
+    Join1["JOIN 假货罚单<br/><i>(使用 seed_penalize_data B1)</i>"]:::logic
+    Join2["JOIN 劣质罚单<br/><i>(使用 seed_penalize_data B2)</i>"]:::logic
+    Join3["JOIN 虚假宣传罚单<br/><i>(使用 seed_penalize_data B3)</i>"]:::logic
+    Join4["JOIN 商品信息<br/><i>(dim_prd_product_base_df C)</i>"]:::logic
+    Join5["JOIN 订单信息<br/><i>(shop_order_order_data D)</i>"]:::logic
+    Join6["JOIN 强关联群组<br/><i>(shop_same_people_shops_group E)</i>"]:::logic
+    Insert["INSERT origin_groupshopinfo"]:::output
+    
+    Start --> CTE1 & CTE2 & CTE3
+    CTE1 & CTE3 --> Join1
+    Join1 --> Join2 --> Join3
+    Join3 --> Join4 --> Join5 --> Join6
+    Join6 --> Insert
+</script>
+
+    <script type="text/template" id="graph-ParseScript">
+graph TD
+    classDef data fill:#e0f2fe,stroke:#0284c7,stroke-width:2px;
+    classDef logic fill:#fae8ff,stroke:#a855f7,stroke-width:2px;
+    classDef output fill:#dcfce7,stroke:#16a34a,stroke-width:2px;
+    
+    Start(("开始")):::logic
+    Query["查询罚单数据"]:::data
+    Loop["遍历每条罚单"]:::logic
+    Try1["解析 recall_product_verify_result"]:::logic
+    Try2["解析 violation_detail:commodity_id"]:::logic
+    Try3["解析 violation_detail:product_id"]:::logic
+    Dedupe["去重 product_id_list"]:::logic
+    Expand["展开为多行"]:::logic
+    SaveHive["保存到 Hive"]:::output
+    
+    Start --> Query
+    Query --> Loop
+    Loop --> Try1 & Try2 & Try3
+    Try1 & Try2 & Try3 --> Dedupe
+    Dedupe --> Expand
+    Expand --> SaveHive
+</script>
+
+    <!-- Simplified Content -->
+    <script type="text/template" id="content-SummaryScript-simplified" data-name="全域风险团伙审核_召回_汇总.py" data-lang="python"># 核心逻辑: 基于历史7天数据去重
+# 构建历史字典: 商家 -> 其关联过的所有种子集合
+history_shop_link_seed_dict = {}
+for idx in range(len(temp_history_data)):
+    # ... 构建映射 ...
+
+# 过滤当前数据 (核心逻辑)
+for idx in range(len(temp_today_data)):
+    # 子集检查
+    if set(seed_shop_list) <= set(history_link_seed_list):
+        filter_sign = 1  # 过滤掉
+</script>
+
+    <script type="text/template" id="content-RuleScript-simplified" data-name="全域风险团伙审核_召回_团伙规则过滤_假货.py"
+        data-lang="python"># 核心逻辑: 群组切分和采样
+# 排序逻辑: is_seed DESC, has_new_product DESC, random
+all_shop_list.sort(key=lambda x: (x[1], x[2], random.random()), reverse=True)
+
+# 分块 (max 10 shops)
+sub_group_list = split_chunks(10, all_shop_list)
+</script>
+
+    <script type="text/template" id="content-FilterSQL-simplified" data-name="全域风险团伙审核_召回_团伙种子过滤_假货.sql"
+        data-lang="sql">-- 核心逻辑: 初筛条件
+-- 1. 至少1个假货种子 (group_jh_seed_cnt >= 1)
+-- 2. 至少1个严重种子 (group_worth_reejctandpenalize_jh_seed_cnt >= 1)
+-- 3. 至少3个待审核商家 (group_has_auditproduct_shop_cnt >= 3)
+
+WHERE group_jh_seed_cnt >= 1
+  AND group_worth_reejctandpenalize_jh_seed_cnt >= 1
+  AND group_has_auditproduct_shop_cnt >= 3
+</script>
+
+    <script type="text/template" id="content-BaseDataSQL-simplified" data-name="全域风险团伙审核_召回_团伙基础数据.sql" data-lang="sql">-- 核心逻辑: 组装宽表
+-- 关联: 团伙关系 -> 商家属性 -> 罚单信息 -> 商品信息 -> 订单数据
+
+SELECT
+    A.group_id, A.shop_id,
+    B1.is_jh_seed,  -- 假货种子标记
+    B1.seed_penalize_info,  -- 罚单详情JSON
+    C.product_cnt,  -- 商品统计
+    D.p60d_pay_order_cnt  -- 订单统计
+FROM group_base_data A
+LEFT JOIN seed_penalize_data B1 ON ...
+LEFT JOIN product_data C ON ...
+LEFT JOIN order_data D ON ...
+</script>
+
+    <script type="text/template" id="content-ParseScript-simplified" data-name="底线违规商品映射解析_假货.py" data-lang="python"># 核心逻辑: 从罚单中解析商品ID
+# 处理混乱的JSON和各种分隔符格式
+
+for idx in range(len(shop_jh_seed_penalize)):
+    product_id_list = []
+    
+    # 尝试解析 3 种字段
+    try: # recall_product_verify_result
+        ...
+    try: # violation_detail:commodity_id
+        ...
+    try: # violation_detail:product_id
+        ...
+</script>
+
+    <script>
+        // State
+        const state = {
+            currentMode: 'simplified',
+            currentNodeId: null,
+            originalContentCache: {},
+            currentCodeText: ''  // Store original code text for navigation
+        };
+
+        const codeNavigation = {
+            "SummaryScript": {
+                "LoadToday": "today_data_sql = \"\"\"",
+                "LoadHistory": "history_data_sql = \"\"\"",
+                "Loop": "for idx in tqdm(range(len(temp_today_data))):",
+                "CheckSet": "if set(seed_shop_list) <= set(history_link_seed_list):",
+                "SaveHive": "dataframe2hive"
+            },
+            "RuleScript": {
+                "Load": "group_data_sql = \"\"\"",
+                "Group": "for group_id in tqdm(group_id_list):",
+                "Sort": "random.shuffle(seed_shop_list)",
+                "CheckSize": "if len(seed_shop_list) + len(unseed_shop_list) <= 10:",
+                "Split": "split_chunks(",
+                "Keep": "group_shop_list = seed_shop_list + unseed_shop_list",
+                "BuildJSON": "group_result.append({",
+                "SaveHive": "dataframe2hive(df=group_result_df"
+            },
+            "FilterSQL": {
+                "Origin": "FROM    ecom_govern_community.groupaudit_shop_recallstrategy_v1_origin_groupshopinfo AS A",
+                "Penalty": "AND     rule_id IN (216949)",
+                "Window1": "AS group_jh_seed_cnt",
+                "Window2": "AS group_has_auditproduct_shop_cnt",
+                "Window3": "AS group_worth_reejctandpenalize_jh_seed_cnt",
+                "Filter": "WHERE   group_jh_seed_cnt >= 1",
+                "Insert": "INSERT OVERWRITE TABLE ecom_govern_community.groupaudit_shop_recallstrategy_v1_filter_groupshopinfo"
+            },
+            "BaseDataSQL": {
+                "CTE1": "WITH group_base_data AS (",
+                "CTE2": "shop_main_cate as (",
+                "CTE3": "seed_penliaze_data AS (", // 注意：源码中确实是 penliaze (拼写错误)，必须匹配源码
+                "Join1": ") as B1 on A.shop_id = B1.shop_id",    // 源码逻辑：使用 risk_type='jh'
+                "Join2": ") as B2 on A.shop_id = B2.shop_id",    // 源码逻辑：使用 risk_type='lz'
+                "Join3": ") as B3 on A.shop_id = B3.shop_id",
+                "Join4": "count(prod_id) AS product_cnt",
+                "Join5": "dm_temai.shop_order_order_data",
+                "Join6": "dm_temai.shop_same_people_shops_group_hard_lab",
+                "Insert": "INSERT OVERWRITE TABLE ecom_govern_community.groupaudit_shop_recallstrategy_v1_origin_groupshopinfo"
+            },
+            "ParseScript": {
+                "Query": "shop_jh_seed_penalize_sql =",
+                "Loop": "for idx in tqdm(range(len(shop_jh_seed_penalize)))",
+                "Try1": "recall_product_verify_result = final_factor_info_list_map.get",
+                "Try2": "violation_detail_commodity_id = final_factor_info_list_map.get",
+                "Try3": "violation_detail_product_id = final_factor_info_list_map.get",
+                "Dedupe": "product_id_list = list(set(product_id_list))",
+                "Expand": "for product_id in product_id_list:",
+                "SaveHive": "dataframe2hive"
+            }
+        };
+
+        const fileMapping = {
+            "SummaryScript": { filename: "全域风险团伙审核_召回_汇总.py", lang: "python" },
+            "RuleScript": { filename: "全域风险团伙审核_召回_团伙规则过滤_假货.py", lang: "python" },
+            "FilterSQL": { filename: "全域风险团伙审核_召回_团伙种子过滤_假货.sql", lang: "sql" },
+            "BaseDataSQL": { filename: "全域风险团伙审核_召回_团伙基础数据.sql", lang: "sql" },
+            "ParseScript": { filename: "底线违规商品映射解析_假货.py", lang: "python" }
+        };
+
+        const nodeMapping = {
+            "SummaryScript": "content-SummaryScript",
+            "RuleScript": "content-RuleScript",
+            "FilterSQL": "content-FilterSQL",
+            "BaseDataSQL": "content-BaseDataSQL",
+            "ParseScript": "content-ParseScript"
+        };
+
+        mermaid.initialize({ startOnLoad: false, theme: 'base', securityLevel: 'loose' });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderGraph('main');
+            setTimeout(() => {
+                bindInteractivity();
+                initResizer();
+            }, 500);
+        });
+
+        function renderGraph(graphId) {
+            const container = document.getElementById('graph-container');
+            const template = document.getElementById(`graph-${graphId}`);
+            if (!template) return;
+
+            const graphDef = template.textContent.trim();
+            container.innerHTML = `<div class="mermaid-output w-full h-full flex items-center justify-center"></div>`;
+
+            mermaid.render(`mermaid-${Date.now()}`, graphDef).then(result => {
+                container.querySelector('.mermaid-output').innerHTML = result.svg;
+                if (graphId === 'main') {
+                    bindInteractivity();
+                } else {
+                    bindDetailGraphInteractivity(graphId);
+                }
+            });
+        }
+
+        function bindInteractivity() {
+            Object.keys(nodeMapping).forEach(nodeId => {
+                const nodes = document.querySelectorAll(`#graph-container g.node`);
+                nodes.forEach(node => {
+                    if (node.id.includes(nodeId)) {
+                        node.style.cursor = 'pointer';
+                        node.onclick = (e) => {
+                            e.stopPropagation();
+                            document.querySelectorAll('#graph-container g.node path, #graph-container g.node rect').forEach(p => p.style.strokeWidth = '1px');
+                            const shape = node.querySelector('path, rect');
+                            if (shape) shape.style.strokeWidth = '3px';
+
+
+                            // Single click: Select node and show simplified code
+                            state.currentNodeId = nodeId;
+                            state.currentMode = 'simplified'; // Reset to simplified on new selection
+                            switchMode('simplified');
+                        };
+
+                        // Double click: Drill down to sub-process (Original mode)
+                        node.ondblclick = (e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            console.log('Double click on node:', nodeId);
+                            state.currentNodeId = nodeId;
+                            switchMode('original'); // Switch to original (detail) mode
+                        };
+                    }
+                });
+            });
+        }
+
+        function bindDetailGraphInteractivity(graphId) {
+            console.log('=== Binding detail graph for:', graphId);
+
+            const navMapping = codeNavigation[graphId];
+            if (!navMapping) {
+                console.warn('No navigation mapping for:', graphId);
+            }
+
+            setTimeout(() => {
+                const container = document.getElementById('graph-container');
+                const allNodes = container.querySelectorAll('g.node');
+                console.log('Total nodes found:', allNodes.length);
+
+                if (allNodes.length === 0) {
+                    console.error('No nodes found!');
+                    return;
+                }
+
+                allNodes.forEach((node, index) => {
+                    // MATCH BY NODE ID (Simplified & Robust)
+                    // Mermaid node IDs are typically: flowchart-{ID}-{NUMBER}
+                    // We extract the ID part and look it up in navMapping.
+                    let nodeId = node.id;
+                    let logicalId = null;
+                    let matchedKeyword = null;
+
+                    // Try to parse logical ID from Mermaid formatted ID
+                    // Example: flowchart-Load-41 -> Load
+                    // Example: flowchart-Window1-22 -> Window1
+                    const match = nodeId.match(/flowchart-([^-]+)-\d+/);
+                    if (match && match[1]) {
+                        logicalId = match[1];
+                        console.log(`  -> Extracted ID: ${logicalId}`);
+
+                        // Direct lookup
+                        if (navMapping[logicalId]) {
+                            matchedKeyword = navMapping[logicalId];
+                            console.log(`  -> ID Match: ${logicalId} => ${matchedKeyword}`);
+                        }
+                    }
+
+                    // Fallback: If ID match fails, check if the key exists directly (some versions behave differently)
+                    if (!matchedKeyword && navMapping[nodeId]) {
+                        matchedKeyword = navMapping[nodeId];
+                        console.log(`  -> Direct Node ID Match: ${nodeId}`);
+                    }
+
+                    // Setup clickability
+                    node.style.cursor = 'pointer';
+                    node.style.pointerEvents = 'all';
+
+                    // Visual feedback
+                    const shape = node.querySelector('rect, path, polygon');
+                    let originalStroke = '#cbd5e1';
+                    let originalWidth = '1';
+
+                    if (shape) {
+                        originalStroke = shape.getAttribute('stroke') || '#cbd5e1';
+                        originalWidth = shape.getAttribute('stroke-width') || '1';
+
+                        node.addEventListener('mouseenter', () => {
+                            shape.setAttribute('stroke', '#3b82f6');
+                            shape.setAttribute('stroke-width', '3');
+                        });
+
+                        node.addEventListener('mouseleave', () => {
+                            shape.setAttribute('stroke', originalStroke);
+                            shape.setAttribute('stroke-width', originalWidth);
+                        });
+                    }
+
+                    // Click handler
+                    node.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        console.log('=== NODE CLICKED ===', index);
+
+                        if (matchedKeyword) {
+                            console.log('Navigating to:', matchedKeyword);
+                            navigateToCode(matchedKeyword);
+                        } else {
+                            console.log('No navigation target for this node');
+                            alert('此节点暂无代码导航\\n节点文本: ' + fullText.substring(0, 50));
+                        }
+
+                        // Visual feedback
+                        if (shape) {
+                            const oldStroke = shape.getAttribute('stroke');
+                            const oldWidth = shape.getAttribute('stroke-width');
+                            shape.setAttribute('stroke', '#ef4444');
+                            shape.setAttribute('stroke-width', '4');
+                            setTimeout(() => {
+                                shape.setAttribute('stroke', oldStroke);
+                                shape.setAttribute('stroke-width', oldWidth);
+                            }, 1000);
+                        }
+                    }, true);
+                });
+
+                console.log('=== Binding complete ===');
+            }, 500);
+        }
+
+        function navigateToCode(keyword) {
+            console.log('Navigating to keyword:', keyword);
+
+            // Use stored original code text instead of textContent
+            const codeText = state.currentCodeText;
+            if (!codeText) {
+                console.error('No code text available');
+                return;
+            }
+
+            console.log('Code length:', codeText.length);
+            console.log('First 200 chars:', codeText.substring(0, 200));
+
+            // Find keyword
+            const index = codeText.indexOf(keyword);
+            if (index === -1) {
+                console.warn('Keyword not found:', keyword);
+                return;
+            }
+            console.log('Found at index:', index);
+
+            // Calculate line number - count newlines BEFORE the keyword
+            const textBeforeKeyword = codeText.substring(0, index);
+            const newlineCount = (textBeforeKeyword.match(/\n/g) || []).length;
+            const lineNumber = newlineCount + 1;
+
+            console.log('Text before keyword (first 100 chars):', textBeforeKeyword.substring(0, 100));
+            console.log('Target line number:', lineNumber, '(counted', newlineCount, 'newlines)');
+
+            // Scroll using line number rows in the hljs-ln table
+            setTimeout(() => {
+                const codeBlock = document.getElementById('code-content');
+                const pre = codeBlock.parentElement;
+
+                // Find the table row for this line number
+                const lineNumberCells = document.querySelectorAll('.hljs-ln-numbers');
+                console.log('Found line number cells:', lineNumberCells.length);
+
+                let targetRow = null;
+                lineNumberCells.forEach(cell => {
+                    const cellLineNum = parseInt(cell.textContent.trim());
+                    if (cellLineNum === lineNumber) {
+                        targetRow = cell.parentElement; // Get the tr
+                        console.log('Found target row for line', lineNumber);
+                    }
+                });
+
+                if (targetRow) {
+                    targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                    // Highlight the code cell aggressively
+                    const cells = targetRow.querySelectorAll('td');
+                    cells.forEach(cell => {
+                        cell.style.setProperty('background-color', 'rgba(59, 130, 246, 0.5)', 'important');
+                        cell.style.setProperty('transition', 'background-color 0.5s', 'important');
+                    });
+                    targetRow.style.setProperty('outline', '2px solid #3b82f6', 'important');
+
+                    setTimeout(() => {
+                        cells.forEach(cell => {
+                            cell.style.backgroundColor = '';
+                        });
+                        targetRow.style.outline = '';
+                    }, 2000);
+                } else {
+                    console.warn('Could not find exact row for line', lineNumber);
+
+                    // Fallback: Find closest row
+                    let closestRow = null;
+                    let minDiff = Infinity;
+
+                    console.log('Scanning 10 sample cells:', Array.from(lineNumberCells).slice(0, 10).map(c => c.textContent + '|' + c.dataset.lineNumber));
+
+                    lineNumberCells.forEach(cell => {
+                        // Try dataset first, then text content
+                        let val = parseInt(cell.dataset.lineNumber);
+                        if (isNaN(val)) {
+                            val = parseInt(cell.textContent.trim());
+                        }
+
+                        if (!isNaN(val)) {
+                            // Correct logic to use parsed val
+                            const diffCorrect = Math.abs(val - lineNumber);
+
+                            if (diffCorrect < minDiff) {
+                                minDiff = diffCorrect;
+                                closestRow = cell.parentElement;
+                            }
+                        }
+                    });
+
+                    if (closestRow) {
+                        console.log('Using closest row:', closestRow.querySelector('.hljs-ln-numbers').textContent.trim(), 'diff:', minDiff);
+                        closestRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                        // Aggressive highlighting
+                        const cells = closestRow.querySelectorAll('td');
+                        cells.forEach(cell => {
+                            cell.style.setProperty('background-color', 'rgba(255, 255, 0, 0.3)', 'important');
+                            cell.style.setProperty('transition', 'background-color 0.5s', 'important');
+                        });
+                        closestRow.style.setProperty('outline', '2px solid #eab308', 'important'); // Add visible border
+
+                        setTimeout(() => {
+                            cells.forEach(cell => {
+                                cell.style.backgroundColor = '';
+                            });
+                            closestRow.style.outline = '';
+                        }, 2000);
+                    } else {
+                        // Total fallback if no rows found
+                        const estimatedHeight = (lineNumber - 1) * 22;
+                        pre.scrollTo({
+                            top: estimatedHeight - pre.clientHeight / 2,
+                            behavior: 'smooth'
+                        });
+                        console.log('Scrolled to estimated position:', estimatedHeight);
+                    }
+                }
+            }, 100);
+        }
+
+        function updateGraph() {
+            const title = document.getElementById('graph-title');
+            const backBtn = document.getElementById('back-btn');
+            const headerContainer = document.getElementById('graph-header-container');
+
+            if (state.currentMode === 'original' && state.currentNodeId) {
+                renderGraph(state.currentNodeId);
+                title.textContent = 'Logic Flow';
+                backBtn.classList.remove('hidden');
+
+                // Make entire header clickable
+                headerContainer.onclick = backToMain;
+                headerContainer.classList.add('cursor-pointer', 'hover:bg-slate-50', 'hover:border-brand-200');
+            } else {
+                renderGraph('main');
+                title.textContent = 'Dependency Graph';
+                backBtn.classList.add('hidden');
+
+                // Remove clickability
+                headerContainer.onclick = null;
+                headerContainer.classList.remove('cursor-pointer', 'hover:bg-slate-50', 'hover:border-brand-200');
+            }
+        }
+
+        function backToMain() {
+            state.currentMode = 'simplified';
+            switchMode('simplified');
+        }
+
+        function switchMode(mode) {
+            state.currentMode = mode;
+
+            const simBtn = document.getElementById('tab-simplified');
+            const oriBtn = document.getElementById('tab-original');
+
+            if (mode === 'simplified') {
+                simBtn.className = "px-3 py-1 text-[10px] font-medium rounded-md text-white bg-brand-600 transition-all";
+                oriBtn.className = "px-3 py-1 text-[10px] font-medium rounded-md text-slate-400 hover:text-slate-200 transition-all";
+            } else {
+                oriBtn.className = "px-3 py-1 text-[10px] font-medium rounded-md text-white bg-brand-600 transition-all";
+                simBtn.className = "px-3 py-1 text-[10px] font-medium rounded-md text-slate-400 hover:text-slate-200 transition-all";
+            }
+
+            renderContent();
+            updateGraph();
+        }
+
+        async function renderContent() {
+            if (!state.currentNodeId) return;
+
+            const codeBlock = document.getElementById('code-content');
+            let code, lang, name;
+
+            if (state.currentMode === 'simplified') {
+                const targetId = `${nodeMapping[state.currentNodeId]}-simplified`;
+                const template = document.getElementById(targetId);
+                if (!template) return;
+                code = template.textContent.trim();
+                lang = template.getAttribute('data-lang');
+                name = template.getAttribute('data-name');
+            } else {
+                const fileInfo = fileMapping[state.currentNodeId];
+                if (!fileInfo) return;
+
+                if (!state.originalContentCache[state.currentNodeId]) {
+                    try {
+                        codeBlock.textContent = "// Loading...";
+                        codeBlock.className = "hljs language-plaintext code-placeholder";
+
+                        const response = await fetch(fileInfo.filename);
+                        if (!response.ok) throw new Error(`Failed to load ${fileInfo.filename}`);
+                        const content = await response.text();
+                        state.originalContentCache[state.currentNodeId] = content;
+                    } catch (error) {
+                        codeBlock.textContent = `// Error: ${error.message}\n// Access via http://localhost:8000/index.html`;
+                        return;
+                    }
+                }
+
+                code = state.originalContentCache[state.currentNodeId];
+                lang = fileInfo.lang;
+                name = fileInfo.filename;
+            }
+
+            codeBlock.textContent = code;
+            codeBlock.classList.remove('code-placeholder');
+            codeBlock.removeAttribute('data-highlighted');
+            codeBlock.className = `language-${lang} hljs`;
+
+            // Store original code for navigation
+            state.currentCodeText = code;
+
+            hljs.highlightElement(codeBlock);
+            hljs.lineNumbersBlock(codeBlock);
+
+            document.getElementById('current-filename').textContent = name;
+            document.getElementById('lang-tag').textContent = lang.toUpperCase();
+        }
+
+        function initResizer() {
+            const resizer = document.getElementById('drag-handle');
+            const leftSide = document.getElementById('left-pane');
+            const rightSide = document.getElementById('right-pane');
+            const container = document.getElementById('main-split-view');
+            let x = 0, leftWidth = 0;
+            let currentRatio = 50; // Default
+
+            // Restore from localStorage (handled by inline script)
+            const savedRatio = localStorage.getItem('splitPaneRatio');
+            if (savedRatio) {
+                const ratio = parseFloat(savedRatio);
+                if (!isNaN(ratio) && ratio > 20 && ratio < 80) {
+                    currentRatio = ratio;
+                }
+            }
+
+            resizer.addEventListener('mousedown', function (e) {
+                x = e.clientX;
+                leftWidth = leftSide.getBoundingClientRect().width;
+                document.addEventListener('mousemove', mouseMoveHandler);
+                document.addEventListener('mouseup', mouseUpHandler);
+                document.body.classList.add('resizing');
+            });
+
+            function mouseMoveHandler(e) {
+                const dx = e.clientX - x;
+                const newLeftWidth = ((leftWidth + dx) * 100) / container.getBoundingClientRect().width;
+                if (newLeftWidth > 20 && newLeftWidth < 80) {
+                    currentRatio = newLeftWidth; // Update current ratio
+                    leftSide.style.width = newLeftWidth + '%';
+                    rightSide.style.width = (100 - newLeftWidth) + '%';
+                }
+            }
+
+            function mouseUpHandler() {
+                document.removeEventListener('mousemove', mouseMoveHandler);
+                document.removeEventListener('mouseup', mouseUpHandler);
+                document.body.classList.remove('resizing');
+
+                // Save to localStorage
+                localStorage.setItem('splitPaneRatio', currentRatio);
+                console.log('Saved split ratio:', currentRatio);
+            }
+        }
+
+        function copyCode() {
+            const codeBlock = document.getElementById('code-content');
+            navigator.clipboard.writeText(codeBlock.textContent).then(() => {
+                const btn = event.target;
+                const oldText = btn.textContent;
+                btn.textContent = 'COPIED!';
+                setTimeout(() => btn.textContent = oldText, 2000);
+            });
+        }
+    </script>
 </body>
+
 </html>
